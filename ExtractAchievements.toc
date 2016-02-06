@@ -1,0 +1,9 @@
+## Interface: 60200
+## Title: Extract Achievements
+## Notes: Sort raid achievements from the WoW client into zone and boss categories
+## Author: Rainrider
+## Version: 0.1
+## SavedVariables: ExtractAchievementsDB
+## OptionalDeps: AdiDebug
+
+core.lua
