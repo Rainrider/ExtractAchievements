@@ -177,9 +177,9 @@ local encounterExceptions = {
 	-- Nefarian's End
 	[174] = { 4849, 5116, 5462 },
 	-- Baleroc, the Gatekeeper
-	[196] = { 5805, 5830 },
+	[196] = { 5802, 5805, 5830, 5893 },
 	-- Majordomo Staghelm
-	[197] = { 5799, 5804 },
+	[197] = { 5799, 5802, 5804, 5893 },
 	-- Alizabal
 	[339] = { 6108 },
 	-- The Spirit Kings
