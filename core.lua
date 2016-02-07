@@ -158,10 +158,10 @@ function addon:GetCategoryAchievementsForMapID(catID, mapID, instanceID)
 	return mapAchievements
 end
 
-local function CheckCriteria(encounterID, achievementID, criteria)
+local function CheckCriteria(encounterID, encounterName, achievementID, criteria)
 	for i = 1, #criteria do
-		local _, assetType, _, _, _, _, _, assetID = GetAchievementCriteriaInfoByID(achievementID, criteria[i])
-		if (assetID == encounterID) then
+		local criteriaName, assetType, _, _, _, _, _, assetID = GetAchievementCriteriaInfoByID(achievementID, criteria[i])
+		if (assetID == encounterID or find(lower(criteriaName), encounterName, 1, true)) then
 			return true
 		end
 	end
@@ -209,7 +209,7 @@ function addon:GetAchievementsForEncounter(encounterID, mapID, instanceID, categ
 	local encounterName = lower(EJ_GetEncounterInfo(encounterID))
 
 	for achievementID, data in pairs(categoryAchievements) do
-		if (find(data.name, encounterName, 1, true) or find(data.desc, encounterName, 1, true) or CheckCriteria(encounterID, achievementID, data.criteria)) then
+		if (find(data.name, encounterName, 1, true) or find(data.desc, encounterName, 1, true) or CheckCriteria(encounterID, encounterName, achievementID, data.criteria)) then
 			store[#store + 1] = achievementID
 		end
 	end
