@@ -71,16 +71,7 @@ function addon:ADDON_LOADED(_, name)
 	self:UnregisterEvent("ADDON_LOADED")
 end
 
---[[
-	achievementsPerCategory = {
-		[catID] = {
-			[achievementID] = {
-				name = "name",
-				desc = "desc",
-			},
-		}
-	}
-]]
+-- achievementsPerCategory[catID][achievementID] = { name = "name", desc = "desc" }
 local achievementsPerCategory = {}
 
 function addon:GetAchievementSeries(achievementID, numEntries, store)
@@ -130,6 +121,9 @@ function addon:GetAchievementsForCategoryID(catID)
 end
 
 local achievementsPerMap = {}
+
+-- mapsPerCategory[catID][mapID] = numMapAchievements
+local mapsPerCategory = {}
 -- e.g. get all achievements for Hellfire Citadel (mapID 1026) from Draenor Raid (catID 15231)
 function addon:GetCategoryAchievementsForMapID(catID, mapID, instanceID)
 	achievementsPerMap[mapID] = achievementsPerMap[mapID] or {}
@@ -137,21 +131,25 @@ function addon:GetCategoryAchievementsForMapID(catID, mapID, instanceID)
 	local mapName = lower(GetMapNameByID(mapID))
 	local instanceName = lower(EJ_GetInstanceInfo(instanceID))
 	if (mapName ~= instanceName) then
-		Debug("MapName", "Map and instance name differ: ", mapName, instanceName)
+		Debug("|cff0099CCMaps|r", "Map and instance name differ: ", mapName, instanceName)
 	end
 
 	if (not next(mapAchievements)) then
-		local numEntries = 0
 		local categoryAchievements = self:GetAchievementsForCategoryID(catID)
+		mapsPerCategory[catID] = mapsPerCategory[catID] or {}
+		if (not mapsPerCategory[catID][mapID]) then
+			Debug("|cff0099CCMaps|r", "Adding entry for", mapName, "in", catID)
+			mapsPerCategory[catID][mapID] = 0
+		end
 
 		for achievementID, data in pairs(categoryAchievements) do
-			if (find(data.name, mapName, 1, true) or find(data.desc, mapName, 1, true)) then
+			if (find(data.name, instanceName, 1, true) or find(data.desc, instanceName, 1, true)) then
 				mapAchievements[achievementID] = data
-				numEntries = numEntries + 1
+				mapsPerCategory[catID][mapID] = mapsPerCategory[catID][mapID] + 1
 			end
 		end
-		if (numEntries == 0) then
-			Debug("|cff0099CCMap|r", "No achievements found for", mapName, mapID)
+		if (mapsPerCategory[catID][mapID] == 0) then
+			Debug("|cff0099CCMaps|r", "No achievements found for", mapName, mapID)
 		end
 	end
 
@@ -215,7 +213,7 @@ function addon:GetAchievementsForEncounter(encounterID, mapID, instanceID, categ
 	end
 
 	if (#store == 0) then
-		Debug("|cff0099CCEncounter|r", "No achievements found for", encounterName, encounterID)
+		Debug("|cffBBCC00Encounter|r", "No achievements found for", encounterName, encounterID)
 	end
 end
 
@@ -293,6 +291,7 @@ function addon:GetData()
 	self:GetAchievements(db.encounters.dungeons)
 
 	self:VerifyCategories()
+	self:VerifyMaps()
 end
 
 function addon:VerifyCategories()
@@ -301,8 +300,29 @@ function addon:VerifyCategories()
 		for achievementID in pairs(achievements) do
 			numEntries = numEntries + 1
 		end
-		Debug("Verify", "Category:", catID, "Achievements:", numEntries, "?=", (GetCategoryNumAchievements(catID, true)))
+		Debug("|cffCC9900Verify - Category|r", catID, "Achievements:", numEntries, "?=", (GetCategoryNumAchievements(catID, true)))
 	end
+end
+
+function addon:VerifyMaps()
+	for catID, maps in pairs(mapsPerCategory) do
+		local numMapAchievements = 0
+		for mapID, num in pairs(maps) do
+			numMapAchievements = numMapAchievements + num
+			for achievementID in pairs(achievementsPerMap[mapID]) do
+				achievementsPerCategory[catID][achievementID] = nil
+			end
+		end
+		Debug("|cffCC9900Verify - Maps|r", catID, "Map achievements:", numMapAchievements, "?=", (GetCategoryNumAchievements(catID, true)))
+	end
+
+	for catID, achievements in pairs(achievementsPerCategory) do
+		Debug("|cffCC9900Verify - Maps|r", "Lone achievements in category", catID)
+		for achievementID, data in pairs(achievements) do
+			Debug("|cffCC9900Verify - Maps|r", GetAchievementLink(achievementID), achievementID)
+		end
+	end
+
 end
 
 function addon:GetAchievementFromCategory(achievementID, catID)
