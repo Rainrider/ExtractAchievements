@@ -284,14 +284,16 @@ function addon:GetData()
 	--self:GetEncountersByType("raids", 1, EJ_GetNumTiers(), db.encounters)
 	--self:GetEncountersByType("dungeons", 1, EJ_GetNumTiers(), db.encounters)
 
-	--self:GetEncountersByType("raids", 4, 4, db.encounters)
-	self:GetEncountersByType("dungeons", 3, 3, db.encounters)
+	self:GetEncountersByType("raids", 6, 6, db.encounters)
+	self:GetEncountersByType("dungeons", 6, 6, db.encounters)
 
-	--self:GetAchievements(db.encounters.raids)
+	self:GetAchievements(db.encounters.raids)
 	self:GetAchievements(db.encounters.dungeons)
 
 	self:VerifyCategories()
-	self:VerifyMaps()
+	--self:VerifyMaps()
+	self:VerifyEncounters(db.encounters.raids)
+	self:VerifyEncounters(db.encounters.dungeons)
 end
 
 function addon:VerifyCategories()
@@ -322,7 +324,25 @@ function addon:VerifyMaps()
 			Debug("|cffCC9900Verify - Maps|r", GetAchievementLink(achievementID), achievementID)
 		end
 	end
+end
 
+function addon:VerifyEncounters(store)
+	local catID
+	for tier, instances in pairs(store) do
+		for _, encounters in ipairs(instances) do
+			for _, data in pairs(encounters) do
+				catID = data.category -- there is only one category per store
+				for _, achievementID in ipairs(data.achievements) do
+					achievementsPerCategory[catID][achievementID] = nil
+				end
+			end
+		end
+	end
+
+	Debug("|cffCC9900Verify - Encounters|r", "Lone achievements in category", catID)
+	for achievementID, data in pairs(achievementsPerCategory[catID]) do
+		Debug("|cffCC9900Verify - Encounters|r", GetAchievementLink(achievementID), achievementID)
+	end
 end
 
 function addon:GetAchievementFromCategory(achievementID, catID)
