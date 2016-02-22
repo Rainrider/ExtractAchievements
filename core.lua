@@ -22,8 +22,10 @@ local EJ_GetEncounterInfoByIndex = EJ_GetEncounterInfoByIndex
 local EJ_GetInstanceByIndex = EJ_GetInstanceByIndex
 local EJ_GetInstanceInfo = EJ_GetInstanceInfo
 local EJ_GetNumTiers = EJ_GetNumTiers
+local EJ_IsValidInstanceDifficulty = EJ_IsValidInstanceDifficulty
 local EJ_SelectInstance = EJ_SelectInstance
 local EJ_SelectTier = EJ_SelectTier
+local EJ_SetDifficulty = EJ_SetDifficulty
 
 --[[
 	  168, -- Dungeons & Raids
@@ -47,6 +49,11 @@ local tierIDToCategoryID = {
 	[4] = { dungeons = 15067, raids = 15068 }, -- Cataclysm
 	[5] = { dungeons = 15106, raids = 15107 }, -- Mists of Pandaria
 	[6] = { dungeons = 15228, raids = 15231 }, -- Warlords of Draenor
+}
+
+local groupDifficultyIDs = {
+	dungeons = { 23, 2, 1 },
+	raids = { 16, 15, 6, 5, 14, 4, 3, 17, 7 },
 }
 
 local addon = CreateFrame("Frame", addonName)
@@ -245,6 +252,7 @@ function addon:GetEncountersByType(encounterType, fromTier, toTier, store)
 	local encounters = store[encounterType]
 
 	for tier = fromTier, toTier do
+		local numInstances = 0
 		EJ_SelectTier(tier)
 		encounters[tier] = {}
 		local currentTier = encounters[tier]
@@ -254,8 +262,18 @@ function addon:GetEncountersByType(encounterType, fromTier, toTier, store)
 
 			if (not instanceID) then break end
 			-- need to do this, else mapID is sometimes -1
+			numInstances = numInstances + 1
 			EJ_SelectInstance(instanceID)
-			local _, _, _, _, _, _, mapID = EJ_GetInstanceInfo(instanceID)
+			local instanceName, _, _, _, _, _, mapID = EJ_GetInstanceInfo(instanceID)
+
+			-- set max applicable difficulty to get all bosses
+			for _, difficulty in ipairs(groupDifficultyIDs[encounterType]) do
+				if (EJ_IsValidInstanceDifficulty(difficulty)) then
+					EJ_SetDifficulty(difficulty)
+					Debug("Difficulty", "set to", difficulty, "for instance", instanceName)
+					break;
+				end
+			end
 
 			currentTier[instance] = {}
 			local currentInstance = currentTier[instance]
@@ -276,6 +294,8 @@ function addon:GetEncountersByType(encounterType, fromTier, toTier, store)
 				}
 			end
 		end
+
+		Debug(encounterType, "found in tier", tier, ":", numInstances)
 	end
 end
 
@@ -355,12 +375,13 @@ function addon:GetAchievementFromCategory(achievementID, catID)
 	end
 end
 
-function addon:TestVanessa()
+function addon:TestVanessa(diff)
 	local tier = 4 -- Cataclysm
 	local instanceID = 63 -- Deadmines
 
 	EJ_SelectTier(tier)
 	EJ_SelectInstance(instanceID)
+	EJ_SetDifficulty(diff)
 
 	for i = 1, math.huge do
 		local name, _, encounterID = EJ_GetEncounterInfoByIndex(i, instanceID)
